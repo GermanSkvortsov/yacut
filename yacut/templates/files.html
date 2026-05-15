@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block title %}Загрузка файлов{% endblock title %}
+
+{% block content %}
+<main>
+  <section class="container my-5">
+    <div class="row">
+      <h1 class="text-center">Загрузка файлов на Яндекс Диск</h1>
+      <p class="text-center my-4">
+        Выберите один или несколько файлов для загрузки
+      </p>
+      <div class="col-12 col-lg-7 my-5">
+        <form method="POST" novalidate enctype="multipart/form-data">
+          {{ form.csrf_token }}
+          
+          {{ form.files(class="form-control form-control-lg py-2 mb-3") }}
+          {% if form.files.errors %}
+            <p class="text-danger">
+              {% for error in form.files.errors %}
+                {{ error }}
+              {% endfor %}
+            </p>
+          {% endif %}
+          
+          {{ form.submit(class="button px-5 py-3 btn btn-primary") }}
+        </form>
+        
+        {% with messages = get_flashed_messages() %}
+          {% if messages %}
+            <p class="text-danger py-3 mb-3">
+              {% for message in messages %}
+                {{ message }}
+              {% endfor %}
+            </p>
+          {% endif %}
+        {% endwith %}
+        
+        {% if results %}
+          <div class="mt-4">
+            <h5>Загруженные файлы:</h5>
+            <table class="table table-striped">
+              <thead>
+                <tr>
+                  <th>Имя файла</th>
+                  <th>Короткая ссылка</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for item in results %}
+                <tr>
+                  <td>{{ item.filename }}</td>
+                  <td><a href="{{ item.short_url }}" target="_blank">{{ item.short_url }}</a></td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% endif %}
+      </div>
+      <div class="col-12 col-lg-5">
+        <img class="img-fluid mx-auto d-block" src="{{ url_for('static', filename='img/illustration.png') }}" alt="">
+      </div>
+    </div>
+  </section>
+</main>
+{% endblock content %}
