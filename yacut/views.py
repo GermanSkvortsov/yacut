@@ -14,6 +14,23 @@ from .yandex_disk import YandexDisk
 FORBIDDEN_SHORT_IDS = ['files']
 
 
+def _check_custom_id(custom_id):
+    """Проверка, что custom_id не занят и не запрещён."""
+    if custom_id in FORBIDDEN_SHORT_IDS:
+        return False
+    if URLMap.query.filter_by(short=custom_id).first():
+        return False
+    return True
+
+
+def _save_url_map(original, short):
+    """Создание и сохранение URLMap."""
+    url_map = URLMap(original=original, short=short)
+    db.session.add(url_map)
+    db.session.commit()
+    return url_map
+
+
 @app.route('/', methods=['GET', 'POST'])
 def index_view():
     """Главная страница: форма создания короткой ссылки."""
@@ -25,12 +42,7 @@ def index_view():
         custom_id = (form.custom_id.data or '').strip()
 
         if custom_id:
-            if custom_id in FORBIDDEN_SHORT_IDS:
-                flash(
-                    'Предложенный вариант короткой ссылки уже существует.'
-                )
-                return render_template('index.html', form=form)
-            if URLMap.query.filter_by(short=custom_id).first():
+            if not _check_custom_id(custom_id):
                 flash(
                     'Предложенный вариант короткой ссылки уже существует.'
                 )
@@ -39,9 +51,7 @@ def index_view():
         else:
             short = get_unique_short_id()
 
-        url_map = URLMap(original=original, short=short)
-        db.session.add(url_map)
-        db.session.commit()
+        _save_url_map(original, short)
         short_url = url_for(
             'redirect_to_url', short_id=short, _external=True
         )
@@ -62,15 +72,13 @@ def files_view():
 
         for file, download_url in zip(files, download_urls):
             short_id = get_unique_short_id()
-            url_map = URLMap(original=download_url, short=short_id)
-            db.session.add(url_map)
+            _save_url_map(download_url, short_id)
             results.append({
                 'filename': file.filename,
                 'short_url': url_for(
                     'redirect_to_url', short_id=short_id, _external=True
                 )
             })
-        db.session.commit()
 
     return render_template('files.html', form=form, results=results)
 

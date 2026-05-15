@@ -6,8 +6,7 @@ from . import app, db
 from .error_handlers import InvalidAPIUsage
 from .models import URLMap
 from .utils import get_unique_short_id, validate_short_id
-
-FORBIDDEN_SHORT_IDS = ['files']
+from .views import _check_custom_id, _save_url_map
 
 
 @app.route('/api/id/', methods=['POST'])
@@ -36,11 +35,7 @@ def create_short_link():
             raise InvalidAPIUsage(
                 'Указано недопустимое имя для короткой ссылки', 400
             )
-        if custom_id in FORBIDDEN_SHORT_IDS:
-            raise InvalidAPIUsage(
-                'Предложенный вариант короткой ссылки уже существует.', 400
-            )
-        if URLMap.query.filter_by(short=custom_id).first():
+        if not _check_custom_id(custom_id):
             raise InvalidAPIUsage(
                 'Предложенный вариант короткой ссылки уже существует.', 400
             )
@@ -48,9 +43,7 @@ def create_short_link():
     else:
         short = get_unique_short_id()
 
-    url_map = URLMap(original=original, short=short)  # type: ignore
-    db.session.add(url_map)
-    db.session.commit()
+    _save_url_map(original, short)
 
     return jsonify({
         'url': original,

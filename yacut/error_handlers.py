@@ -11,7 +11,7 @@ class InvalidAPIUsage(Exception):
     status_code = 400
 
     def __init__(self, message, status_code=None):
-        """Инициализация исключения с сообщением и опциональным статус-кодом."""
+        """Инициализация исключения с сообщением и статус-кодом."""
         super().__init__()
         self.message = message
         if status_code is not None:
