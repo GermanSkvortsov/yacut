@@ -5,7 +5,13 @@ import re
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileAllowed, FileRequired, MultipleFileField
 from wtforms import StringField, SubmitField
-from wtforms.validators import URL, DataRequired, Length, Optional, ValidationError
+from wtforms.validators import (
+    URL,
+    DataRequired,
+    Length,
+    Optional,
+    ValidationError,
+)
 
 from .constants import (
     ORIGINAL_MAX_LENGTH,

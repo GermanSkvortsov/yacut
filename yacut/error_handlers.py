@@ -34,7 +34,8 @@ def invalid_api_usage(error):
 def page_not_found(error):
     """Обработчик ошибки 404. Для API — JSON, для сайта — HTML."""
     if request.path.startswith('/api/'):
-        return jsonify({'message': 'Указанный id не найден'}), HTTPStatus.NOT_FOUND
+        return jsonify(
+            {'message': 'Указанный id не найден'}), HTTPStatus.NOT_FOUND
     return render_template('404.html'), HTTPStatus.NOT_FOUND
 
 
