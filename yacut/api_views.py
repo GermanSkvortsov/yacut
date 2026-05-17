@@ -1,62 +1,55 @@
 """API-вьюхи сервиса YaCut."""
 
-from flask import abort, jsonify, request, url_for
+from http import HTTPStatus
+
+from flask import jsonify, request, url_for
 
 from . import app
 from .error_handlers import InvalidAPIUsage
-from .models import URLMap
-from .utils import get_unique_short_id, validate_short_id
-from .views import _check_custom_id, _save_url_map
+from .models import ShortLinkCreationError, URLMap
 
 
 @app.route('/api/id/', methods=['POST'])
 def create_short_link():
     """Создание короткой ссылки. Принимает JSON с полями url и custom_id."""
     if not request.data:
-        raise InvalidAPIUsage('Отсутствует тело запроса', 400)
+        raise InvalidAPIUsage(
+            'Отсутствует тело запроса', HTTPStatus.BAD_REQUEST
+        )
 
     data = request.get_json(silent=True)
     if data is None:
-        raise InvalidAPIUsage('Отсутствует тело запроса', 400)
+        raise InvalidAPIUsage(
+            'Отсутствует тело запроса', HTTPStatus.BAD_REQUEST
+        )
 
     if 'url' not in data:
-        raise InvalidAPIUsage('"url" является обязательным полем!', 400)
+        raise InvalidAPIUsage(
+            '"url" является обязательным полем!', HTTPStatus.BAD_REQUEST
+        )
 
     original = data['url']
     custom_id = data.get('custom_id')
 
-    if custom_id:
-        custom_id = custom_id.strip()
-        if len(custom_id) > 16:
-            raise InvalidAPIUsage(
-                'Указано недопустимое имя для короткой ссылки', 400
-            )
-        if not validate_short_id(custom_id):
-            raise InvalidAPIUsage(
-                'Указано недопустимое имя для короткой ссылки', 400
-            )
-        if not _check_custom_id(custom_id):
-            raise InvalidAPIUsage(
-                'Предложенный вариант короткой ссылки уже существует.', 400
-            )
-        short = custom_id
-    else:
-        short = get_unique_short_id()
-
-    _save_url_map(original, short)
+    try:
+        url_map = URLMap.create(original, custom_id)
+    except ShortLinkCreationError as error:
+        raise InvalidAPIUsage(str(error), HTTPStatus.BAD_REQUEST)
 
     return jsonify({
-        'url': original,
+        'url': url_map.original,
         'short_link': url_for(
-            'redirect_to_url', short_id=short, _external=True
+            'redirect_to_url', short_id=url_map.short, _external=True
         )
-    }), 201
+    }), HTTPStatus.CREATED
 
 
 @app.route('/api/id/<string:short_id>/', methods=['GET'])
 def get_original_link(short_id):
     """Получение оригинальной ссылки по короткому идентификатору."""
-    url_map = URLMap.query.filter_by(short=short_id).first()
+    url_map = URLMap.get_by_short(short_id)
     if url_map is None:
-        abort(404)
-    return jsonify({'url': url_map.original}), 200
+        raise InvalidAPIUsage(
+            'Указанный id не найден', HTTPStatus.NOT_FOUND
+        )
+    return jsonify({'url': url_map.original}), HTTPStatus.OK
