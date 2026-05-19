@@ -2,7 +2,7 @@
 
 import random
 import string
-from datetime import datetime
+from datetime import datetime, timezone
 
 from . import db
 from .constants import (
@@ -28,7 +28,9 @@ class URLMap(db.Model):
     short = db.Column(
         db.String(SHORT_MAX_LENGTH), unique=True, nullable=False
     )
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    timestamp = db.Column(
+        db.DateTime, default=lambda: datetime.now(timezone.utc)
+    )
 
     def to_dict(self, fields=None):
         """Сериализация модели в словарь.
@@ -91,3 +93,4 @@ class URLMap(db.Model):
             )
             if not URLMap.is_short_taken(short_id):
                 return short_id
+            

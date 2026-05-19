@@ -2,7 +2,7 @@
 
 import asyncio
 
-from flask import flash, redirect, render_template, url_for
+from flask import abort, flash, redirect, render_template, url_for
 
 from . import app
 from .constants import FILES_SHORT_ID
@@ -69,6 +69,5 @@ def redirect_to_url(short_id):
     """Переадресация на оригинальную ссылку по короткому идентификатору."""
     url_map = URLMap.get_by_short(short_id)
     if url_map is None:
-        from flask import abort
         abort(404)
     return redirect(url_map.original)

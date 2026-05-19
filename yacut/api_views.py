@@ -6,7 +6,12 @@ from http import HTTPStatus
 from flask import jsonify, request, url_for
 
 from . import app
-from .constants import SHORT_MAX_LENGTH, SHORT_MIN_LENGTH, VALID_SHORT_REGEX
+from .constants import (
+    ORIGINAL_MAX_LENGTH,
+    SHORT_MAX_LENGTH,
+    SHORT_MIN_LENGTH,
+    VALID_SHORT_REGEX,
+)
 from .error_handlers import InvalidAPIUsage
 from .models import ShortLinkCreationError, URLMap
 
@@ -33,18 +38,26 @@ def create_short_link():
     original = data['url']
     custom_id = data.get('custom_id')
 
+    if len(original) > ORIGINAL_MAX_LENGTH:
+        raise InvalidAPIUsage(
+            f'Длина URL не должна превышать {ORIGINAL_MAX_LENGTH} символов',
+            HTTPStatus.BAD_REQUEST,
+        )
+
     if custom_id:
         custom_id = custom_id.strip()
         if not re.match(VALID_SHORT_REGEX, custom_id):
             raise InvalidAPIUsage(
                 'Указано недопустимое имя для короткой ссылки',
-                HTTPStatus.BAD_REQUEST
+                HTTPStatus.BAD_REQUEST,
             )
-        if len(
-            custom_id) < SHORT_MIN_LENGTH or len(custom_id) > SHORT_MAX_LENGTH:
+        if (
+            len(custom_id) < SHORT_MIN_LENGTH
+            or len(custom_id) > SHORT_MAX_LENGTH
+        ):
             raise InvalidAPIUsage(
                 'Указано недопустимое имя для короткой ссылки',
-                HTTPStatus.BAD_REQUEST
+                HTTPStatus.BAD_REQUEST,
             )
 
     try:
