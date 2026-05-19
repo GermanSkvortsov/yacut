@@ -3,6 +3,9 @@
 # Максимальная длина оригинальной ссылки (совпадает с ограничением в БД)
 ORIGINAL_MAX_LENGTH = 500
 
+# Минимальная длина короткого идентификатора
+SHORT_MIN_LENGTH = 1
+
 # Максимальная длина короткой части ссылки (например, abc123 в yacut.ru/abc123)
 SHORT_MAX_LENGTH = 16
 
@@ -12,8 +15,8 @@ SHORT_AUTO_LENGTH = 6
 # Регулярное выражение: только латиница и цифры (без пробелов и спецсимволов)
 VALID_SHORT_REGEX = r'^[a-zA-Z0-9]+$'
 
-# Адрес страницы загрузки файлов
-FILES_URL = '/files'
+# Короткий идентификатор страницы загрузки файлов
+FILES_SHORT_ID = 'files'
 
 # Запрещённые короткие имена (нельзя создать ссылку yacut.ru/files)
-FORBIDDEN_SHORT_IDS = (FILES_URL.lstrip('/'),)
+FORBIDDEN_SHORT_IDS = (FILES_SHORT_ID,)

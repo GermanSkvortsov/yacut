@@ -2,6 +2,7 @@
 
 import asyncio
 import urllib.parse
+from http import HTTPStatus
 
 import aiohttp
 
@@ -46,7 +47,11 @@ class YandexDisk:
 
         headers = {'Authorization': f'OAuth {self.token}'}
         async with session.put(upload_url, data=file_data) as response:
-            if response.status not in (200, 201, 202):
+            if response.status not in (
+                HTTPStatus.OK,
+                HTTPStatus.CREATED,
+                HTTPStatus.ACCEPTED,
+            ):
                 raise Exception(
                     f'Ошибка загрузки файла: {response.status}'
                 )

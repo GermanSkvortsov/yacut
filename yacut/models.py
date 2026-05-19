@@ -1,7 +1,6 @@
 """Модели приложения YaCut."""
 
 import random
-import re
 import string
 from datetime import datetime
 
@@ -11,7 +10,6 @@ from .constants import (
     ORIGINAL_MAX_LENGTH,
     SHORT_AUTO_LENGTH,
     SHORT_MAX_LENGTH,
-    VALID_SHORT_REGEX,
 )
 
 
@@ -32,12 +30,23 @@ class URLMap(db.Model):
     )
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
-    def to_dict(self):
-        """Сериализация модели в словарь."""
-        return {
+    def to_dict(self, fields=None):
+        """Сериализация модели в словарь.
+
+        Параметр fields позволяет выбрать нужные поля (например, {'url'}).
+        Если fields не указан — возвращаются все поля.
+        """
+        result = {
             'url': self.original,
-            'short_link': self.short
+            'short_link': self.short,
         }
+        if fields is not None:
+            return {
+                key: value
+                for key, value in result.items()
+                if key in fields
+            }
+        return result
 
     @staticmethod
     def get_by_short(short_id):
@@ -45,27 +54,21 @@ class URLMap(db.Model):
         return URLMap.query.filter_by(short=short_id).first()
 
     @staticmethod
+    def is_short_taken(short_id):
+        """Проверить, занят ли короткий идентификатор."""
+        if short_id in FORBIDDEN_SHORT_IDS:
+            return True
+        return URLMap.get_by_short(short_id) is not None
+
+    @staticmethod
     def create(original, custom_id=None):
         """Создать короткую ссылку (микро-ORM).
 
-        Проверяет custom_id, генерирует short, сохраняет в БД.
-        При проблемах бросает ShortLinkCreationError.
+        При проблемах с занятостью custom_id бросает ShortLinkCreationError.
         """
         if custom_id:
             custom_id = custom_id.strip()
-            if not re.match(VALID_SHORT_REGEX, custom_id):
-                raise ShortLinkCreationError(
-                    'Указано недопустимое имя для короткой ссылки'
-                )
-            if len(custom_id) > SHORT_MAX_LENGTH or len(custom_id) < 1:
-                raise ShortLinkCreationError(
-                    'Указано недопустимое имя для короткой ссылки'
-                )
-            if custom_id in FORBIDDEN_SHORT_IDS:
-                raise ShortLinkCreationError(
-                    'Предложенный вариант короткой ссылки уже существует.'
-                )
-            if URLMap.query.filter_by(short=custom_id).first():
+            if URLMap.is_short_taken(custom_id):
                 raise ShortLinkCreationError(
                     'Предложенный вариант короткой ссылки уже существует.'
                 )
@@ -86,6 +89,5 @@ class URLMap(db.Model):
             short_id = ''.join(
                 random.choices(chars, k=SHORT_AUTO_LENGTH)
             )
-            if short_id not in FORBIDDEN_SHORT_IDS:
-                if not URLMap.query.filter_by(short=short_id).first():
-                    return short_id
+            if not URLMap.is_short_taken(short_id):
+                return short_id

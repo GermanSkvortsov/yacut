@@ -1,10 +1,12 @@
 """API-вьюхи сервиса YaCut."""
 
+import re
 from http import HTTPStatus
 
 from flask import jsonify, request, url_for
 
 from . import app
+from .constants import SHORT_MAX_LENGTH, SHORT_MIN_LENGTH, VALID_SHORT_REGEX
 from .error_handlers import InvalidAPIUsage
 from .models import ShortLinkCreationError, URLMap
 
@@ -31,17 +33,30 @@ def create_short_link():
     original = data['url']
     custom_id = data.get('custom_id')
 
+    if custom_id:
+        custom_id = custom_id.strip()
+        if not re.match(VALID_SHORT_REGEX, custom_id):
+            raise InvalidAPIUsage(
+                'Указано недопустимое имя для короткой ссылки',
+                HTTPStatus.BAD_REQUEST
+            )
+        if len(
+            custom_id) < SHORT_MIN_LENGTH or len(custom_id) > SHORT_MAX_LENGTH:
+            raise InvalidAPIUsage(
+                'Указано недопустимое имя для короткой ссылки',
+                HTTPStatus.BAD_REQUEST
+            )
+
     try:
         url_map = URLMap.create(original, custom_id)
     except ShortLinkCreationError as error:
         raise InvalidAPIUsage(str(error), HTTPStatus.BAD_REQUEST)
 
-    return jsonify({
-        'url': url_map.original,
-        'short_link': url_for(
-            'redirect_to_url', short_id=url_map.short, _external=True
-        )
-    }), HTTPStatus.CREATED
+    data = url_map.to_dict()
+    data['short_link'] = url_for(
+        'redirect_to_url', short_id=data['short_link'], _external=True
+    )
+    return jsonify(data), HTTPStatus.CREATED
 
 
 @app.route('/api/id/<string:short_id>/', methods=['GET'])
@@ -52,4 +67,4 @@ def get_original_link(short_id):
         raise InvalidAPIUsage(
             'Указанный id не найден', HTTPStatus.NOT_FOUND
         )
-    return jsonify({'url': url_map.original}), HTTPStatus.OK
+    return jsonify(url_map.to_dict(fields={'url'})), HTTPStatus.OK

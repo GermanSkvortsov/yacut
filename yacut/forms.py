@@ -16,6 +16,7 @@ from wtforms.validators import (
 from .constants import (
     ORIGINAL_MAX_LENGTH,
     SHORT_MAX_LENGTH,
+    SHORT_MIN_LENGTH,
     VALID_SHORT_REGEX,
 )
 
@@ -41,9 +42,10 @@ class URLForm(FlaskForm):
         'Ваш вариант короткой ссылки',
         validators=[
             Length(
-                min=1,
+                min=SHORT_MIN_LENGTH,
                 max=SHORT_MAX_LENGTH,
-                message=f'Допустимая длина от 1 до {SHORT_MAX_LENGTH} символов'
+                message=f'Допустимая длина от {
+                    SHORT_MIN_LENGTH} до {SHORT_MAX_LENGTH} символов'
             ),
             Optional(),
             validate_short_id,

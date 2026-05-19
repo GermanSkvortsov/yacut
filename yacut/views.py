@@ -1,12 +1,11 @@
 """Вьюхи приложения YaCut."""
-# pyright: reportCallIssue=false
 
 import asyncio
 
 from flask import flash, redirect, render_template, url_for
 
 from . import app
-from .constants import FILES_URL
+from .constants import FILES_SHORT_ID
 from .forms import FileForm, URLForm
 from .models import ShortLinkCreationError, URLMap
 from .yandex_disk import YandexDisk
@@ -28,15 +27,16 @@ def index_view():
         flash(str(error))
         return render_template('index.html', form=form)
 
+    data = url_map.to_dict()
     short_url = url_for(
-        'redirect_to_url', short_id=url_map.short, _external=True
+        'redirect_to_url', short_id=data['short_link'], _external=True
     )
     return render_template(
         'index.html', form=form, short_url=short_url
     )
 
 
-@app.route(FILES_URL, methods=['GET', 'POST'])
+@app.route('/' + FILES_SHORT_ID, methods=['GET', 'POST'])
 def files_view():
     """Страница загрузки файлов на Яндекс Диск."""
     form = FileForm()
@@ -53,10 +53,11 @@ def files_view():
             url_map = URLMap.create(download_url)
         except ShortLinkCreationError:
             continue
+        data = url_map.to_dict()
         results.append({
             'filename': file.filename,
             'short_url': url_for(
-                'redirect_to_url', short_id=url_map.short, _external=True
+                'redirect_to_url', short_id=data['short_link'], _external=True
             )
         })
 
@@ -66,5 +67,8 @@ def files_view():
 @app.route('/<string:short_id>')
 def redirect_to_url(short_id):
     """Переадресация на оригинальную ссылку по короткому идентификатору."""
-    url_map = URLMap.query.filter_by(short=short_id).first_or_404()
+    url_map = URLMap.get_by_short(short_id)
+    if url_map is None:
+        from flask import abort
+        abort(404)
     return redirect(url_map.original)
