@@ -93,4 +93,3 @@ class URLMap(db.Model):
             )
             if not URLMap.is_short_taken(short_id):
                 return short_id
-            

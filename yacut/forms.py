@@ -44,8 +44,10 @@ class URLForm(FlaskForm):
             Length(
                 min=SHORT_MIN_LENGTH,
                 max=SHORT_MAX_LENGTH,
-                message=f'Допустимая длина от {
-                    SHORT_MIN_LENGTH} до {SHORT_MAX_LENGTH} символов'
+                message=(
+                    f'Допустимая длина от {SHORT_MIN_LENGTH} '
+                    f'до {SHORT_MAX_LENGTH} символов'
+                ),
             ),
             Optional(),
             validate_short_id,
