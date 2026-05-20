@@ -4,6 +4,8 @@ import random
 import string
 from datetime import datetime, timezone
 
+from flask import url_for
+
 from . import db
 from .constants import (
     FORBIDDEN_SHORT_IDS,
@@ -32,15 +34,20 @@ class URLMap(db.Model):
         db.DateTime, default=lambda: datetime.now(timezone.utc)
     )
 
-    def to_dict(self, fields=None):
+    def to_dict(self, fields=None, external=False):
         """Сериализация модели в словарь.
 
         Параметр fields позволяет выбрать нужные поля (например, {'url'}).
         Если fields не указан — возвращаются все поля.
+        Параметр external управляет генерацией абсолютного URL для short_link.
         """
         result = {
             'url': self.original,
-            'short_link': self.short,
+            'short_link': url_for(
+                'redirect_to_url',
+                short_id=self.short,
+                _external=external,
+            ),
         }
         if fields is not None:
             return {
@@ -58,9 +65,10 @@ class URLMap(db.Model):
     @staticmethod
     def is_short_taken(short_id):
         """Проверить, занят ли короткий идентификатор."""
-        if short_id in FORBIDDEN_SHORT_IDS:
-            return True
-        return URLMap.get_by_short(short_id) is not None
+        return (
+            short_id in FORBIDDEN_SHORT_IDS
+            or URLMap.get_by_short(short_id) is not None
+        )
 
     @staticmethod
     def create(original, custom_id=None):

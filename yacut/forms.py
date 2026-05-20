@@ -1,7 +1,5 @@
 """Формы приложения YaCut."""
 
-import re
-
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileAllowed, FileRequired, MultipleFileField
 from wtforms import StringField, SubmitField
@@ -10,7 +8,7 @@ from wtforms.validators import (
     DataRequired,
     Length,
     Optional,
-    ValidationError,
+    Regexp,
 )
 
 from .constants import (
@@ -19,12 +17,6 @@ from .constants import (
     SHORT_MIN_LENGTH,
     VALID_SHORT_REGEX,
 )
-
-
-def validate_short_id(form, field):
-    """Валидатор: короткий идентификатор — только латиница и цифры."""
-    if field.data and not re.match(VALID_SHORT_REGEX, field.data):
-        raise ValidationError('Указано недопустимое имя для короткой ссылки')
 
 
 class URLForm(FlaskForm):
@@ -50,7 +42,10 @@ class URLForm(FlaskForm):
                 ),
             ),
             Optional(),
-            validate_short_id,
+            Regexp(
+                VALID_SHORT_REGEX,
+                message='Указано недопустимое имя для короткой ссылки',
+            ),
         ]
     )
     submit = SubmitField('Создать')

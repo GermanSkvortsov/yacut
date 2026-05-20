@@ -3,7 +3,7 @@
 import re
 from http import HTTPStatus
 
-from flask import jsonify, request, url_for
+from flask import jsonify, request
 
 from . import app
 from .constants import (
@@ -46,13 +46,9 @@ def create_short_link():
 
     if custom_id:
         custom_id = custom_id.strip()
-        if not re.match(VALID_SHORT_REGEX, custom_id):
-            raise InvalidAPIUsage(
-                'Указано недопустимое имя для короткой ссылки',
-                HTTPStatus.BAD_REQUEST,
-            )
         if (
-            len(custom_id) < SHORT_MIN_LENGTH
+            not re.match(VALID_SHORT_REGEX, custom_id)
+            or len(custom_id) < SHORT_MIN_LENGTH
             or len(custom_id) > SHORT_MAX_LENGTH
         ):
             raise InvalidAPIUsage(
@@ -65,11 +61,7 @@ def create_short_link():
     except ShortLinkCreationError as error:
         raise InvalidAPIUsage(str(error), HTTPStatus.BAD_REQUEST)
 
-    data = url_map.to_dict()
-    data['short_link'] = url_for(
-        'redirect_to_url', short_id=data['short_link'], _external=True
-    )
-    return jsonify(data), HTTPStatus.CREATED
+    return jsonify(url_map.to_dict(external=True)), HTTPStatus.CREATED
 
 
 @app.route('/api/id/<string:short_id>/', methods=['GET'])

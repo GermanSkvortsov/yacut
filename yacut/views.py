@@ -2,7 +2,7 @@
 
 import asyncio
 
-from flask import abort, flash, redirect, render_template, url_for
+from flask import flash, redirect, render_template
 
 from . import app
 from .constants import FILES_SHORT_ID
@@ -27,10 +27,7 @@ def index_view():
         flash(str(error))
         return render_template('index.html', form=form)
 
-    data = url_map.to_dict()
-    short_url = url_for(
-        'redirect_to_url', short_id=data['short_link'], _external=True
-    )
+    short_url = url_map.to_dict(external=True)['short_link']
     return render_template(
         'index.html', form=form, short_url=short_url
     )
@@ -53,12 +50,9 @@ def files_view():
             url_map = URLMap.create(download_url)
         except ShortLinkCreationError:
             continue
-        data = url_map.to_dict()
         results.append({
             'filename': file.filename,
-            'short_url': url_for(
-                'redirect_to_url', short_id=data['short_link'], _external=True
-            )
+            'short_url': url_map.to_dict(external=True)['short_link'],
         })
 
     return render_template('files.html', form=form, results=results)
@@ -67,7 +61,5 @@ def files_view():
 @app.route('/<string:short_id>')
 def redirect_to_url(short_id):
     """Переадресация на оригинальную ссылку по короткому идентификатору."""
-    url_map = URLMap.get_by_short(short_id)
-    if url_map is None:
-        abort(404)
+    url_map = URLMap.query.filter_by(short=short_id).first_or_404()
     return redirect(url_map.original)
