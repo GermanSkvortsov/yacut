@@ -44,15 +44,21 @@ YaCut — это веб-приложение для сокращения дли�
 
 1. Клонируйте репозиторий:
 
-bash " "git clone https://github.com/GermanSkvortsov/yacut.git " "
+```bash
+git clone https://github.com/GermanSkvortsov/yacut.git
+```
 
 2. Создайте и активируйте виртуальное окружение:
 
-bash " "python -m venv venv " "source venv/bin/activate " "
+```bash
+python -m venv venv " "source venv/bin/activate
+```
 
 3. Установите зависимости:
 
-bash " "pip install -r requirements.txt " "
+```bash
+pip install -r requirements.txt
+```
 
 4. Создайте файл .env с переменными окружения:
 
