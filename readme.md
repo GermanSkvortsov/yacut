@@ -51,7 +51,8 @@ git clone https://github.com/GermanSkvortsov/yacut.git
 2. Создайте и активируйте виртуальное окружение:
 
 ```bash
-python -m venv venv " "source venv/bin/activate
+python -m venv venv
+source venv/bin/activate
 ```
 
 3. Установите зависимости:
